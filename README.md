@@ -27,3 +27,17 @@ The same device name must not appear multiple times.
 The list should only be returned if there are sufficient items to display
 (otherwise it will not be shown on the UI to declutter it), otherwise throw and
 `UnprocessableError` error.
+
+## Architecture
+
+Everything is wrapped from
+
+```JavaScript
+try {
+    //functionality
+} catch {
+    //error
+}
+```
+
+where in `try` I get all the devices at the same time even if there is something wrong in the process with the `allSettled` and returning results in an array of both favorite and last access devices. If any of the devices was rejected error returned, otherwise I am adding the `names` of both favorites and last access devices (that their status is `fulfilled`), in an array (`allDeviceNames`) with the usage of the spread operator. Then the double existing values are excluded with the usage of `Set()` method and returning it sliced from `(0,n)`. In case that the Set's length is smaller than n, we get an `Error`. Finally the `catch` throws the `UnprocessableError` that was given.
