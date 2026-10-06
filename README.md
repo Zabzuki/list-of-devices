@@ -1,43 +1,54 @@
-## List of devices
+# list-of-devices
 
-This is a simplified example of combining data from multiple sources which each
-require an API call.
+My TypeScript solution to a coding challenge: build a single, de-duplicated list
+of device names by combining two independent async data sources.
 
-The user of a web application wants to see a list of devices for quick access,
-this list should be comprised of devices the user has marked as a favorite in
-the past (available via the data function `getFavoritedDevices()` method), and
-of those devices that they have recently visited (available via the data
-function `getLastAccessDevices()` method).
+## The problem
 
-Both methods return promises and must be called in parallel for UI performance
-reasons.
+A UI wants a short list of devices for quick access: the user's **favorited**
+devices first, topped up with their **recently accessed** devices. Two data
+functions each return a `Promise<Device[]>` and must be called **in parallel**.
 
-More specifically, implement the
-[`getMostRecentDevices()`](./getMostRecentDevices.ts) method so that it returns
-a function that takes the user and the number of required device names as an
-argument and returns a list of device names. Start with the user's favorited
-devices and if there are not enough favorited devices, fill up the list with the
-last access device names.
+Implement `getMostRecentDevices()` so it returns a function
+`(user, n) => Promise<string[]>` that:
 
-The order of the names must be the same as they are returned by calling the data
-functions.
+- starts with favorited device names, then fills up with last-accessed names;
+- preserves the order returned by the data functions;
+- never repeats a device name;
+- resolves as long as either source succeeds; and
+- rejects with an `UnprocessableError` if fewer than `n` names are available, or
+  if both sources fail.
 
-The same device name must not appear multiple times.
-
-The list should only be returned if there are sufficient items to display
-(otherwise it will not be shown on the UI to declutter it), otherwise throw and
-`UnprocessableError` error.
-
-## Architecture
-
-Everything is wrapped from
-
-```JavaScript
-try {
-    //functionality
-} catch {
-    //error
-}
+```ts
+getMostRecentDevices({ getFavoritedDevices, getLastAccessDevices })(user, n): Promise<string[]>
 ```
 
-where in `try` I get all the devices at the same time even if there is something wrong in the process with the `allSettled` and returning results in an array of both favorite and last access devices. If any of the devices was rejected error returned, otherwise I am adding the `names` of both favorites and last access devices (that their status is `fulfilled`), in an array (`allDeviceNames`) with the usage of the spread operator. Then the double existing values are excluded with the usage of `Set()` method and returning it sliced from `(0,n)`. In case that the Set's length is smaller than n, we get an `Error`. Finally the `catch` throws the `UnprocessableError` that was given.
+## My approach
+
+- Call both sources with a single `Promise.allSettled`, so each is invoked
+  exactly once and a failure in one does not abort the other.
+- If **both** settle as `rejected`, throw.
+- Take the `fulfilled` results (treating a rejected source as an empty list),
+  map each device to its `name`, and concatenate favorited-then-last-accessed.
+- De-duplicate while preserving order with `new Set(...)`.
+- If the unique list has fewer than `n` names, throw; otherwise return the first
+  `n`.
+- All failure paths surface as a single `UnprocessableError("Not enough data")`.
+
+The implementation lives in
+[`getMostRecentDevices.ts`](./getMostRecentDevices.ts); the behaviour is pinned by
+[`getMostRecentDevices.spec.ts`](./getMostRecentDevices.spec.ts), which also
+asserts each source is called only once.
+
+## Run the tests
+
+```bash
+npm install
+npm test
+```
+
+**Built with:** TypeScript, Jest and ts-jest.
+
+## About
+
+My solution to a take-home coding challenge.

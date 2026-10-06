@@ -1,5 +1,20 @@
 {
+  "name": "list-of-devices",
+  "version": "1.0.0",
+  "description": "Merge favorited and recently-accessed devices from two async sources into a de-duplicated list. My solution to a coding challenge.",
+  "scripts": {
+    "test": "jest"
+  },
   "devDependencies": {
-    "@types/jest": "^28.1.4"
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.0",
+    "typescript": "^5.5.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testRegex": ".+\\.spec\\.tsx?$"
   }
 }
